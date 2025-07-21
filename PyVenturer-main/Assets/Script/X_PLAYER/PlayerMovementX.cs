@@ -1,0 +1,149 @@
+﻿using UnityEngine;
+
+[RequireComponent(typeof(CharacterController))]
+public class PlayerMovementX : MonoBehaviour
+{
+    // ────────────────────── Movement ──────────────────────
+    [Header("Movement")]
+    public float moveSpeed = 5f;
+
+    [Header("Sprint")]
+    public float sprintSpeed = 8f;
+    private float currentSpeed;
+
+    // ─────────────────────── Dash ─────────────────────────
+    [Header("Dash")]
+    public float dashSpeed = 20f;
+    public float dashDuration = 0.2f;
+    public float dashCooldown = 1f;
+    private bool canAirDash = true;
+
+    private bool isDashing = false;
+    private float dashTimer;
+    private float dashCooldownTimer = 0f;
+    private Vector3 dashDirection;
+
+    // ─────────────────────── Jump ─────────────────────────
+    [Header("Jump")]
+    public float jumpHeight = 2f;
+    public float gravity = -20f;
+    public float fallMultiplier = 2.5f;
+    public float lowJumpMultiplier = 2f;
+
+    [Header("Coyote Time")]
+    public float coyoteTime = 0.2f;
+    private float coyoteTimeCounter;
+
+    [Header("Jump Buffer")]
+    public float jumpBufferTime = 0.2f;
+    private float jumpBufferCounter;
+
+    // ────────────────────── Ground ────────────────────────
+    private CharacterController controller;
+    private Vector3 velocity;
+    private bool isGrounded;
+    private bool hasJumped;
+
+    [Header("Ground Check")]
+    public Transform groundCheck;
+    public float groundDistance = 0.4f;
+    public LayerMask groundMask;
+
+    // ──── NEW: ยึดติดแพลตฟอร์ม ────────────────────────────
+    private Transform currentPlatform;          // แพลตฟอร์มที่กำลังยืนอยู่
+
+    // ──────────────────── Unity Events ────────────────────
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+    }
+
+    void Update()
+    {
+        // เช็กพื้นด้วย CheckSphere และ Raycast
+        isGrounded = Physics.CheckSphere(groundCheck.position, groundDistance, groundMask) ||
+                     Physics.Raycast(transform.position, Vector3.down, out _, groundDistance + 0.2f, groundMask);
+
+        if (!isGrounded && currentPlatform != null)
+        {
+            transform.SetParent(null);
+            currentPlatform = null;
+        }
+
+        if (isGrounded)
+        {
+            coyoteTimeCounter = coyoteTime;
+            canAirDash = true;
+            hasJumped = false;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
+        }
+
+        if (Input.GetButtonDown("Jump"))
+            jumpBufferCounter = jumpBufferTime;
+        else
+            jumpBufferCounter -= Time.deltaTime;
+
+        float x = Input.GetAxis("Horizontal");
+        float z = Input.GetAxis("Vertical");
+        currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
+
+        Vector3 move = transform.right * x + transform.forward * z;
+        controller.Move(move * currentSpeed * Time.deltaTime);
+
+        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
+
+        if (Input.GetKeyDown(KeyCode.E) && dashCooldownTimer <= 0f && !isDashing)
+        {
+            if (isGrounded || canAirDash)
+            {
+                isDashing = true;
+                Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0f,
+                                                     Input.GetAxisRaw("Vertical")).normalized;
+                dashDirection = inputDirection.magnitude > 0
+                               ? transform.TransformDirection(inputDirection)
+                               : transform.forward;
+                dashTimer = dashDuration;
+                dashCooldownTimer = dashCooldown;
+                if (!isGrounded) canAirDash = false;
+            }
+        }
+
+        if (jumpBufferCounter > 0 && coyoteTimeCounter > 0 && !hasJumped)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+            jumpBufferCounter = 0f;
+            hasJumped = true;
+        }
+
+        if (velocity.y < 0)
+            velocity.y += gravity * fallMultiplier * Time.deltaTime;
+        else if (velocity.y > 0 && !Input.GetButton("Jump"))
+            velocity.y += gravity * lowJumpMultiplier * Time.deltaTime;
+        else
+            velocity.y += gravity * Time.deltaTime;
+
+        controller.Move(velocity * Time.deltaTime);
+
+        if (isDashing)
+        {
+            controller.Move(dashDirection * dashSpeed * Time.deltaTime);
+            dashTimer -= Time.deltaTime;
+            if (dashTimer <= 0f) isDashing = false;
+        }
+    }
+
+
+    // ───────── NEW: เริ่มเกาะแพลตฟอร์มเมื่อเหยียบด้านบน ─────────
+    void OnControllerColliderHit(ControllerColliderHit hit)
+    {
+        if (hit.collider.CompareTag("MovingPlatform") &&
+            Vector3.Dot(hit.normal, Vector3.up) > 0.5f)     // ชนด้านบน
+        {
+            transform.SetParent(hit.collider.transform);     // เกาะแพลตฟอร์ม
+            currentPlatform = hit.collider.transform;
+        }
+    }
+}
