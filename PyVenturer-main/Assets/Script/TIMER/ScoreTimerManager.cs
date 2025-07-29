@@ -90,7 +90,7 @@ public class ScoreTimerManager : MonoBehaviour
                     Debug.Log("🛑 ครบ 5 รอบแล้ว → แสดงหน้าเลือก Skill");
 
                     Time.timeScale = 0f;
-                    hasChosenSkill = true; // ✅ ไม่ให้ขึ้นอีก
+                    hasChosenSkill = true;
 
                     if (skillManager != null)
                         skillManager.ShowSkillPanel();
@@ -103,8 +103,8 @@ public class ScoreTimerManager : MonoBehaviour
                 UpdateTimeUI();
                 UpdateScoreUI();
 
-                yield return StartCoroutine(playerRespawn.HandleRespawn());
-                yield return new WaitForSeconds(1f);
+                playerRespawn.HandleRespawn();              // ✅ เปลี่ยนจาก Coroutine → Call ตรง
+                yield return new WaitForSeconds(1f);        // ⏳ Delay
                 StartCoroutine(Countdown());
                 yield break;
             }
@@ -117,7 +117,7 @@ public class ScoreTimerManager : MonoBehaviour
     {
         Debug.Log("⏱️ เริ่มนับเวลาใหม่หลังเลือกสกิล");
 
-        timeLeft = savedTimeLeft; // ✅ Reset เวลา
+        timeLeft = savedTimeLeft;
         UpdateTimeUI();
 
         Time.timeScale = 1f;
