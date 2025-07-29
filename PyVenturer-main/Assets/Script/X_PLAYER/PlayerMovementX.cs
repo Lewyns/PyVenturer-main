@@ -53,9 +53,18 @@ public class PlayerMovementX : MonoBehaviour
     private Transform currentPlatform;          // แพลตฟอร์มที่กำลังยืนอยู่
 
     // ──────────────────── Unity Events ────────────────────
+
+    public Transform cam; // กล้องที่ใช้หมุน (Main Camera หรือ CameraPivot)
+    private float turnSmoothVelocity; // สำหรับหมุนเนียนๆ
+
+
     void Start()
     {
         controller = GetComponent<CharacterController>();
+
+        controller.slopeLimit = 45f;
+        controller.stepOffset = 0.3f;
+        controller.skinWidth = 0.08f;
     }
 
     void Update()
@@ -90,8 +99,27 @@ public class PlayerMovementX : MonoBehaviour
         float z = Input.GetAxis("Vertical");
         currentSpeed = Input.GetKey(KeyCode.LeftShift) ? sprintSpeed : moveSpeed;
 
-        Vector3 move = transform.right * x + transform.forward * z;
-        controller.Move(move * currentSpeed * Time.deltaTime);
+        Vector3 inputDir = new Vector3(x, 0f, z).normalized;
+
+        if (inputDir.magnitude >= 0.1f)
+        {
+            float targetAngle = Mathf.Atan2(inputDir.x, inputDir.z) * Mathf.Rad2Deg + cam.eulerAngles.y;
+            float smoothAngle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref turnSmoothVelocity, 0.1f);
+
+            transform.rotation = Quaternion.Euler(0f, smoothAngle, 0f);  // หมุนตัวละครตามมุมที่คำนวณ
+
+            Vector3 moveDir = Quaternion.Euler(0f, targetAngle, 0f) * Vector3.forward;
+            controller.Move(moveDir.normalized * currentSpeed * Time.deltaTime);
+        }
+        else
+        {
+            // เมื่อปล่อยปุ่มให้หยุดการหมุนทันที
+            transform.rotation = Quaternion.Euler(0f, transform.eulerAngles.y, 0f);
+
+            // หยุดการเคลื่อนที่ในทิศทาง X และ Z
+            velocity.x = 0f;
+            velocity.z = 0f;
+        }
 
         if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
 
@@ -103,8 +131,8 @@ public class PlayerMovementX : MonoBehaviour
                 Vector3 inputDirection = new Vector3(Input.GetAxisRaw("Horizontal"), 0f,
                                                      Input.GetAxisRaw("Vertical")).normalized;
                 dashDirection = inputDirection.magnitude > 0
-                               ? transform.TransformDirection(inputDirection)
-                               : transform.forward;
+                                ? Quaternion.Euler(0f, cam.eulerAngles.y, 0f) * inputDirection
+                                : transform.forward;
                 dashTimer = dashDuration;
                 dashCooldownTimer = dashCooldown;
                 if (!isGrounded) canAirDash = false;
@@ -134,7 +162,6 @@ public class PlayerMovementX : MonoBehaviour
             if (dashTimer <= 0f) isDashing = false;
         }
     }
-
 
     // ───────── NEW: เริ่มเกาะแพลตฟอร์มเมื่อเหยียบด้านบน ─────────
     void OnControllerColliderHit(ControllerColliderHit hit)
