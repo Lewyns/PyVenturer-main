@@ -17,25 +17,21 @@ public class CheckpointTrigger : MonoBehaviour
             if (respawn != null)
             {
                 respawn.UpdateCheckpoint(transform.position);
+                Debug.Log("📍 Player touched checkpoint at: " + transform.position);
             }
 
-            // ✅ เล่น Particle
             if (activateEffectObject != null)
             {
                 var particle = activateEffectObject.GetComponent<ParticleSystem>();
-                if (particle != null)
-                {
-                    particle.Play();
-                }
+                if (particle != null) particle.Play();
             }
 
-            // ✅ เล่นเสียง
             if (soundSource != null)
             {
                 soundSource.Play();
             }
 
-            isActivated = true; // ✅ บันทึกว่าเคยเหยียบแล้ว
+            isActivated = true;
         }
     }
 }
