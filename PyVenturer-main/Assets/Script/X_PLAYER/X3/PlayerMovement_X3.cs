@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 [RequireComponent(typeof(CharacterController))]
 public class PlayerMovement_X3 : MonoBehaviour
@@ -27,7 +28,6 @@ public class PlayerMovement_X3 : MonoBehaviour
     public bool hasDash = false;
     public bool hasDoubleJump = false;
 
-    private bool canDoubleJump = false;
     private bool usedDoubleJump = false;
     private float lastDashTime = -999f;
 
@@ -46,14 +46,15 @@ public class PlayerMovement_X3 : MonoBehaviour
     private float turnSmoothVelocity;
     private Animator animator;
 
+    [Header("Dash Settings")]
+    public float dashSpeed = 12f;
+    public float dashDuration = 0.3f;
+    private bool isDashing = false;
+
     void Start()
     {
         animator = GetComponentInChildren<Animator>();
         controller = GetComponent<CharacterController>();
-
-        controller.slopeLimit = 45f;
-        controller.stepOffset = 0.3f;
-        controller.skinWidth = 0.08f;
 
         if (groundCheck == null)
             Debug.LogWarning("❗ groundCheck ไม่ได้เซ็ตใน Inspector");
@@ -89,13 +90,19 @@ public class PlayerMovement_X3 : MonoBehaviour
             coyoteTimeCounter -= Time.deltaTime;
         }
 
-        // Jump Buffer
+        // Jump Buffer + Trigger Jump_Up ทันที
         if (Input.GetButtonDown("Jump"))
+        {
             jumpBufferCounter = jumpBufferTime;
+            animator.SetTrigger("Jump_Up"); // ✅ เรียกทันทีเมื่อกด Spacebar
+            animator.SetBool("isJumping", true);
+        }
         else
+        {
             jumpBufferCounter -= Time.deltaTime;
+        }
 
-        // รับ input
+        // รับ input เดิน
         float x = Input.GetAxisRaw("Horizontal");
         float z = Input.GetAxisRaw("Vertical");
 
@@ -114,7 +121,7 @@ public class PlayerMovement_X3 : MonoBehaviour
         if (!isGrounded)
             moveDirectionXZ *= airControlMultiplier;
 
-        // ตั้งค่าสถานะวิ่ง
+        // วิ่ง
         animator.SetBool("isRunning", isGrounded && moveDirectionXZ.magnitude > 0.1f);
 
         // กระโดดแรก
@@ -125,8 +132,6 @@ public class PlayerMovement_X3 : MonoBehaviour
             hasJumped = true;
             usedDoubleJump = false;
 
-            animator.SetTrigger("Jump_Up");
-            animator.SetBool("isJumping", true);
             Debug.Log("✅ Jump!");
         }
         // กระโดดสอง
@@ -162,18 +167,40 @@ public class PlayerMovement_X3 : MonoBehaviour
         }
 
         // Dash
-        if (hasDash && Input.GetKeyDown(KeyCode.LeftShift) && Time.time > lastDashTime + 2f)
+        if (hasDash && Input.GetKeyDown(KeyCode.E) && Time.time > lastDashTime + 2f && !isDashing)
         {
-            Vector3 dashDirection = transform.forward;
-            controller.Move(dashDirection * 10f);
-            lastDashTime = Time.time;
-            Debug.Log("🌀 Dash!");
+            StartCoroutine(Dash());
         }
 
         // Move Final
-        Vector3 finalMove = new Vector3(moveDirectionXZ.x, velocity.y, moveDirectionXZ.z);
-        controller.Move(finalMove * Time.deltaTime);
+        if (!isDashing)
+        {
+            Vector3 finalMove = new Vector3(moveDirectionXZ.x, velocity.y, moveDirectionXZ.z);
+            controller.Move(finalMove * Time.deltaTime);
+        }
 
         wasGroundedLastFrame = isGrounded;
+    }
+
+    private IEnumerator Dash()
+    {
+        isDashing = true;
+        lastDashTime = Time.time;
+
+        Vector3 dashDir = transform.forward;
+        float timer = 0f;
+
+        animator.SetTrigger("Dash");
+        Debug.Log("🌀 Start Dash!");
+
+        while (timer < dashDuration)
+        {
+            controller.Move(dashDir * dashSpeed * Time.deltaTime);
+            timer += Time.deltaTime;
+            yield return null;
+        }
+
+        isDashing = false;
+        Debug.Log("✅ Dash Ended");
     }
 }

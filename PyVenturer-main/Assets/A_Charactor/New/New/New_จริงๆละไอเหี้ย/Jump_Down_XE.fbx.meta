@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 3e25dccf866f605449b7eef402cd3fdc
+guid: 2bcdf3b25ae25a040983e5ccce1d529d
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -33,11 +33,11 @@ ModelImporter:
     extraUserProperties: []
     clipAnimations:
     - serializedVersion: 16
-      name: Jump_Up
+      name: Jump_Down_FRFR
       takeName: Scene
       internalID: -623603649343465320
       firstFrame: 1
-      lastFrame: 18
+      lastFrame: 52
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

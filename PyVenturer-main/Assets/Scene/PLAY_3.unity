@@ -15141,6 +15141,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 128
   cam: {fileID: 772919691}
+  dashSpeed: 12
+  dashDuration: 0.3
 --- !u!143 &854481059
 CharacterController:
   m_ObjectHideFlags: 0
@@ -22071,7 +22073,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   timeText: {fileID: 551474982}
-  startTime: 1
+  startTime: 200
   SCORE_PERCENT: {fileID: 1561193442}
   ScoreSlider: {fileID: 858327576}
   playerObject: {fileID: 1722682184}
@@ -30100,13 +30102,15 @@ MonoBehaviour:
   jumpBufferTime: 0.2
   airControlMultiplier: 0.5
   hasDash: 1
-  hasDoubleJump: 0
+  hasDoubleJump: 1
   groundCheck: {fileID: 158056243}
   groundDistance: 0.4
   groundMask:
     serializedVersion: 2
     m_Bits: 128
   cam: {fileID: 772919691}
+  dashSpeed: 12
+  dashDuration: 0.7
 --- !u!143 &1722682187
 CharacterController:
   m_ObjectHideFlags: 0
