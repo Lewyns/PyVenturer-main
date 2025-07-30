@@ -1,9 +1,11 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using UnityEngine.Audio;
 
 public class SFXVolumeControl : MonoBehaviour
 {
+    [SerializeField] private AudioMixer mixer;
     [SerializeField] private Slider sfxSlider;
     [SerializeField] private Button increaseButton;
     [SerializeField] private Button decreaseButton;
@@ -36,9 +38,11 @@ public class SFXVolumeControl : MonoBehaviour
     private void ChangeVolume()
     {
         SFXVolume = sfxSlider.value;
-        ApplyVolumeToAllSources(SFXVolume);
+        float dB = Mathf.Log10(SFXVolume <= 0.0001f ? 0.0001f : SFXVolume) * 20f;
+        mixer.SetFloat("SFXVolume", dB);
         SaveVolume();
     }
+
 
     private void IncreaseVolume()
     {

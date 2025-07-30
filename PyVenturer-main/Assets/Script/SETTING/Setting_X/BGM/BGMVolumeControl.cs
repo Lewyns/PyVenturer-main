@@ -1,8 +1,10 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Audio;
 
 public class BGMVolumeControl : MonoBehaviour
 {
+    [SerializeField] private AudioMixer mixer;
     [SerializeField] private Slider bgmSlider;
     [SerializeField] private Button increaseButton;
     [SerializeField] private Button decreaseButton;
@@ -74,10 +76,11 @@ public class BGMVolumeControl : MonoBehaviour
     private void ChangeVolume()
     {
         BGMVolume = bgmSlider.value;
-        if (bgmSource != null)
-            bgmSource.volume = bgmSlider.value;
+        float dB = Mathf.Log10(BGMVolume <= 0.0001f ? 0.0001f : BGMVolume) * 20f;
+        mixer.SetFloat("MusicVolume", dB);
         SaveVolume();
     }
+
 
     private void IncreaseVolume()
     {

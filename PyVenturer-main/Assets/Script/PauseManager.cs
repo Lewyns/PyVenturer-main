@@ -42,7 +42,6 @@ public class PauseManager : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
-
     private void ResumeGame()
     {
         isPaused = false;
@@ -51,7 +50,23 @@ public class PauseManager : MonoBehaviour
 
         StartCoroutine(LockMouseAfterDelay(0.1f));
     }
+    public void PauseGame1()
+    {
+        isPaused = true;
+        Time.timeScale = 0f;
 
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void ResumeGame1()
+    {
+        isPaused = false;
+        pauseMenuPanel.SetActive(false);
+        Time.timeScale = 1f;
+
+        StartCoroutine(LockMouseAfterDelay(0.1f));
+    }
     private void ReturnToMainMenu()
     {
         Time.timeScale = 1f;

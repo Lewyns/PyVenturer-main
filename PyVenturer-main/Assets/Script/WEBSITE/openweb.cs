@@ -2,18 +2,31 @@ using UnityEngine;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
+using System.Threading;
 
 public class openweb : MonoBehaviour
 {
+    public PauseManager pauseManager;    // lowercase 'p'
+    public ScoreTimerManager ScoreTimerManager;
+    public SkillManager skillManager;
     public string scriptPath = @"C:\Users\kanch\Downloads\New_CRT_NSC27\Asset\project\project\backend\app.py";
+    public string scriptPath1 = @"C:\Users\kanch\Downloads\PyVenture_ide-main\PyVenture_ide-main\fastapi_server.py";
     public string baseUrl = @"C:\Users\kanch\Downloads\New_CRT_NSC27\Asset\project\project\frontend\quest\index.html";
     public string pythonPath = @"C:\Users\kanch\AppData\Local\Programs\Python\Python311\python.exe";
     public string chromePath = @"C:\Program Files\Google\Chrome\Application\chrome.exe";
+    // พาธที่ Python server จะเขียน done.txt
+    private string doneFilePath = @"C:\Users\kanch\Downloads\PyVenture_ide-main\PyVenture_ide-main\project\backend\done.txt";
 
     private Dictionary<string, string> chapterPages;
 
     void Start()
     {
+        // สตาร์ท Python servers
+        RunPythonServer(scriptPath);
+        RunPythonServer(scriptPath1);
+        // เตรียม chapterPages ตามเดิม
+
+
         chapterPages = new Dictionary<string, string>
         {
             // CHAPTER 1
@@ -41,6 +54,7 @@ public class openweb : MonoBehaviour
             { "ch4_4", @"C:\Users\kanch\Downloads\New_CRT_NSC27\Asset\project\project\frontend\advance\ch4\index.html" }
         };
     }
+
 
     public void OpenChapter(string key)
     {
@@ -78,7 +92,6 @@ public class openweb : MonoBehaviour
         }
     }
 
-
     void OpenInChrome(string htmlPath)
     {
         if (!File.Exists(htmlPath))
@@ -105,8 +118,6 @@ public class openweb : MonoBehaviour
             UnityEngine.Debug.LogError("❌ ไม่พบ Chrome ที่ path ที่กำหนด");
         }
     }
-
-
 
     void RunPythonServer(string script)
     {
@@ -146,24 +157,44 @@ public class openweb : MonoBehaviour
 
     void Update()
     {
-        if (File.Exists("done.txt"))
+        // เช็คไฟล์ done.txt ที่ Python เขียน
+        if (File.Exists(doneFilePath))
         {
-            string result = File.ReadAllText("done.txt").Trim();
-            UnityEngine.Debug.Log("🎉 ตรวจพบ done.txt ผลลัพธ์: " + result);
+            string result = File.ReadAllText(doneFilePath).Trim();
+            UnityEngine.Debug.Log("🎉 เจอ done.txt ผลลัพธ์: " + result);
 
-            // สามารถเก็บค่าหรือปรับ UI ได้ตรงนี้
             if (result == "correct")
             {
-                // ตัวอย่าง: ให้คะแนน หรือแสดงข้อความ
-                PlayerPrefs.SetInt("last_result", 1); // 1 = ถูก
+                PlayerPrefs.SetInt("last_result", 1);
+                skillManager.ShowSkillPanel();
+                UnityEngine.Debug.Log("✅ Quiz ถูกต้อง! ให้คะแนน ✔️");
             }
             else if (result == "wrong")
             {
-                PlayerPrefs.SetInt("last_result", 0); // 0 = ผิด
+                PlayerPrefs.SetInt("last_result", 0);
+                UnityEngine.Debug.Log("❌ Quiz ผิด ลองใหม่อีกครั้ง 🔁");
             }
 
-            File.Delete("done.txt");
-            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu"); // ✅ กลับ MainMenu
+            if (result == "complete")
+            {
+                PlayerPrefs.SetInt("last_result", 0);
+                pauseManager.ResumeGame1();      // <-- instance method
+                UnityEngine.Debug.Log("✅ Quiz complete → resumed game");
+                // แจ้ง Unity ว่า task เสร็จทั้งหมด
+                // เพิ่มฟังก์ชันหรือส่งข้อมูลไปยัง Unity/Backend ได้ที่นี่
+            }
+            if (result == "complete_final")
+            {
+                PlayerPrefs.SetInt("last_result", 0);
+                pauseManager.ResumeGame1();      // <-- instance method
+                                                 //callhere func:
+                UnityEngine.Debug.Log("✅ SPCQuiz complete → resumed game");
+                // แจ้ง Unity ว่า task เสร็จทั้งหมด
+                // เพิ่มฟังก์ชันหรือส่งข้อมูลไปยัง Unity/Backend ได้ที่นี่
+            }
+            // ลบไฟล์ออกแล้วกลับไป MainMenu
+            File.Delete(doneFilePath);
+            //UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
         }
     }
 
